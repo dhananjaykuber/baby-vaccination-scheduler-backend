@@ -20,6 +20,10 @@ const sendEmail = async (req, res) => {
       childrensIds.push(vaccination.childernId);
     });
 
+    if (childrensIds.length < 1) {
+      return res.status(200).json({ message: 'No childrens' });
+    }
+
     let emails = [];
 
     for (let i = 0; i < childrensIds.length; i++) {
@@ -27,42 +31,44 @@ const sendEmail = async (req, res) => {
       emails.push(children.email);
     }
 
-    // node mailer
-    let transporter = nodemailer.createTestAccount({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false, // true for 465, false for other ports
+    let emailString = '';
+    for (let i = 0; i < emails.length - 1; i++) {
+      emailString += `${emails[i]}, `;
+    }
+    emailString += `${emails[emails.length - 1]}`;
+
+    let testAccount = await nodemailer.createTestAccount();
+
+    let transporter = nodemailer.createTransport({
+      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
       auth: {
         user: process.env.EMAIL,
         pass: process.env.PASSWORD,
       },
     });
 
-    const mailOptions = {
-      from: 'Dhananjay Kuber <dnkuber2002@gmail.com>', // sender address
-      to: 'dnkuber2002@gmail.com', // list of receivers
-      subject: 'Hello ✔', // Subject line
-      text: 'Hello world?', // plain text body
-      html: '<b>Hello world?</b>', // html body
-    };
-
-    transporter.sendMail(mailOptions, function (error, info) {
-      if (error) {
-        console.log(error);
-      } else {
-        console.log('Email sent: ' + info.response);
-      }
+    let info = await transporter.sendMail({
+      from: process.env.EMAIL,
+      to: emailString,
+      subject: 'Vaccination',
+      text: 'Please complete vaccination of your children. \n\n Thanks!',
     });
 
-    // for (let i = 0; i < emails.length; i++) {
-    //   let info = await transporter.sendMail({});
+    const updateVaccinations = await Vaccination.updateMany(
+      {
+        date,
+        mailed: false,
+      },
+      {
+        $set: {
+          mailed: true,
+        },
+      }
+    );
 
-    //   console.log('Message sent: %s', info.messageId);
-    //   // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
-
-    //   // Preview only available when sending through an Ethereal account
-    //   console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
-    // }
+    res.status(200).json(info);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

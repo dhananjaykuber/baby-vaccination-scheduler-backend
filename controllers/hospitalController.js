@@ -10,8 +10,6 @@ const generateToken = (_id) => {
 const hospitalRegister = async (req, res) => {
   const { regNo, name, address, phone, email, password } = req.body;
 
-  console.log(regNo, name, address, phone, email, password);
-
   try {
     const exist = await Hospital.findOne({ regNo });
 
