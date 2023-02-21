@@ -74,4 +74,64 @@ const getChildren = async (req, res) => {
   }
 };
 
-module.exports = { childrenRegister, getChildrens, getChildren };
+const deleteChildren = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const vaccination = await Vaccination.deleteMany({ childernId: id });
+    const children = await Childern.deleteOne({
+      _id: id,
+      hospitalId: req.hospital._id,
+    });
+
+    res.status(200).json({ message: 'Children deleted successfully' });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const updateChildren = async (req, res) => {
+  const {
+    motherName,
+    fatherName,
+    childernName,
+    dateOfBirth,
+    weight,
+    gender,
+    phone,
+    email,
+  } = req.body;
+  const { id } = req.params;
+
+  try {
+    const children = await Childern.updateOne(
+      { _id: id, hospitalId: req.hospital._id },
+      {
+        $set: {
+          motherName,
+          fatherName,
+          childernName,
+          dateOfBirth,
+          weight,
+          gender,
+          phone,
+          email,
+        },
+      }
+    );
+
+    res
+      .status(200)
+      .json({ message: 'Children information updated successfully.' });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+module.exports = {
+  childrenRegister,
+  getChildrens,
+  getChildren,
+  deleteChildren,
+  updateChildren,
+};

@@ -1,10 +1,17 @@
 const express = require('express');
 const {
+  updateInformation,
   hospitalRegister,
   hospitalLogin,
 } = require('../controllers/hospitalController');
+const authMiddleware = require('../utils/authMiddleware');
 
 const router = express.Router();
+
+// @desc   : hospital update information
+// @route  : PATCH /api/hospital/
+// @access : private
+router.patch('/', authMiddleware, updateInformation);
 
 // @desc   : hospital register
 // @route  : POST /api/hospital/register

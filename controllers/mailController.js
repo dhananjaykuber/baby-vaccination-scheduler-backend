@@ -3,40 +3,18 @@ const Vaccination = require('../models/vaccinationModel');
 const Childern = require('../models/childrenModel');
 
 const sendEmail = async (req, res) => {
-  var result = new Date();
-  result.setDate(result.getDate());
-  result = result.toString().split(' ');
-
-  const date = `${result[2]} ${result[1]} ${result[3]}`;
+  const {
+    motherName,
+    fatherName,
+    childernName,
+    email,
+    vaccineName,
+    vaccinationDate,
+    hospitalName,
+    vaccinationId,
+  } = req.body;
 
   try {
-    const vaccinations = await Vaccination.find({
-      date,
-      mailed: false,
-    });
-
-    let childrensIds = [];
-    vaccinations.map((vaccination) => {
-      childrensIds.push(vaccination.childernId);
-    });
-
-    if (childrensIds.length < 1) {
-      return res.status(200).json({ message: 'No childrens' });
-    }
-
-    let emails = [];
-
-    for (let i = 0; i < childrensIds.length; i++) {
-      const children = await Childern.findOne({ _id: childrensIds[i] });
-      emails.push(children.email);
-    }
-
-    let emailString = '';
-    for (let i = 0; i < emails.length - 1; i++) {
-      emailString += `${emails[i]}, `;
-    }
-    emailString += `${emails[emails.length - 1]}`;
-
     let testAccount = await nodemailer.createTestAccount();
 
     let transporter = nodemailer.createTransport({
@@ -51,15 +29,15 @@ const sendEmail = async (req, res) => {
 
     let info = await transporter.sendMail({
       from: process.env.EMAIL,
-      to: emailString,
+      to: email,
       subject: 'Vaccination',
-      text: 'Please complete vaccination of your children. \n\n Thanks!',
+      text: `Hello parent name: ${motherName}, ${fatherName}. Please complete ${vaccineName} vaccination of your children ${childernName} today only at ${hospitalName} on ${vaccinationDate}. \n\n Thanks!`,
     });
 
-    const updateVaccinations = await Vaccination.updateMany(
+    const updateVaccination = await Vaccination.updateOne(
       {
-        date,
-        mailed: false,
+        _id: vaccinationId,
+        date: vaccinationDate,
       },
       {
         $set: {
@@ -68,6 +46,7 @@ const sendEmail = async (req, res) => {
       }
     );
 
+    console.log(updateVaccination);
     res.status(200).json(info);
   } catch (error) {
     res.status(400).json({ error: error.message });
